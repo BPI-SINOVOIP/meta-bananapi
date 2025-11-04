@@ -19,7 +19,7 @@ Extract the source code and clone meta-bananapi
     $ cd ${WORK}/ai2n_yocto
     $ git clone -b bpi-ai2n https://github.com/BPI-SINOVOIP/meta-bananapi.git
 
-    Get the docker image for Source code building
+Get the docker image for Source code building
 
     $ docker pull sinovoip/bpi-build-v2h-yocto:ubuntu20.04
     $ docker run --privileged --pid=host -it -v ${WORK}:${WORK} -v /etc/localtime:/etc/localtime -v /dev:/dev -v /proc:/proc -v /tmp:/tmp sinovoip/bpi-build-v2h-yocto:ubuntu20.04 /bin/bash
