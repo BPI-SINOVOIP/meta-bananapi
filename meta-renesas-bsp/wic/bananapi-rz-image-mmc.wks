@@ -1,0 +1,4 @@
+# Short-description: Create image for eMMC
+# Long-description: Creates a image that can be used to write to eMMC for Bananapi boards
+
+part --source rootfs            --fstype=ext4 --label yocto_root       --align 1024

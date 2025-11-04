@@ -1,0 +1,86 @@
+#!/bin/sh
+
+resizefs_enabled() {
+	return 0
+}
+
+get_disk_name() {
+	part=$1
+	part=${part#/dev/}
+	disk=$(readlink /sys/class/block/$part)
+	disk=${disk%/*}
+	disk=/dev/${disk##*/}
+	echo $disk
+}
+
+is_need_resizefs() {
+	part=$1
+	disk=`get_disk_name $part`
+
+	disk_sect=$(cat /sys/block/$(basename "$disk")/size)
+	[ -z "$disk_sect" ] && { echo "Failed to get total sectors"; return 1; }
+
+	part_start=$(cat /sys/class/block/$(basename "$part")/start)
+	part_size=$(cat /sys/class/block/$(basename "$part")/size)
+	part_end=$((part_start + part_size - 1))
+
+	disk_end=$((disk_sect - 1024))  # ?? 1024 sectors
+	debug "disk_end = $disk_end, part_end = $part_end"
+
+	if [ "$part_end" -ge "$disk_end" ]; then
+		debug "No need to resizefs."
+        	return 1
+	fi
+
+	return 0
+}
+
+resize_rootfs() {
+	part=$1
+	disk=`get_disk_name $part`
+	partdevnum=$(echo ${part} | sed 's/\(.*\)\(.\)$/\2/')
+
+	debug "Start resize rootfs $disk..."
+
+	if ! parted "$disk" resizepart $partdevnum 100% > /dev/null 2>&1; then
+		echo "Couldn't resize root partition"
+		return
+	fi
+	sync
+
+	resize2fs -f ${part}
+	if [ $? -eq 0 ]; then
+		echo "Filesystem successfully resized"
+	else
+		echo "resize2fs failed"
+	fi
+}
+
+get_disk_name() {
+	part=$1
+	part=${part#/dev/}
+	disk=$(readlink /sys/class/block/$part)
+	disk=${disk%/*}
+	disk=/dev/${disk##*/}
+	echo $disk
+}
+
+resizefs_run() {
+	if [ -z "$ROOTFS_DIR" ]; then
+		return
+	fi
+
+	if [ -n "$bootparam_root" ]; then
+		if [ -e "$bootparam_root" ]; then
+			#cleanup_mount
+
+			is_need_resizefs $bootparam_root
+			if [ $? -ne 0 ]; then
+				return
+			fi
+
+			# Resize rootfs
+			resize_rootfs $bootparam_root
+		fi
+	fi
+}

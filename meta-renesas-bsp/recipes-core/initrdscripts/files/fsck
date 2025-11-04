@@ -1,0 +1,16 @@
+#!/bin/sh
+
+fsck_enabled() {
+	if [ "$bootparam_fsck" = "force" ]; then
+		return 0
+	fi
+
+	return 1
+}
+
+fsck_run() {
+	if [ -n "$bootparam_root" ]; then
+		debug "Running filesystem checks on partition (${bootparam_root})"
+		fsck.ext4 -f -y "${bootparam_root}"
+	fi
+}
